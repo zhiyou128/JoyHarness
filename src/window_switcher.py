@@ -247,11 +247,13 @@ elif sys.platform == "darwin":
                 capture_output=True, text=True, timeout=5,
             )
             if result.returncode == 0 and result.stdout.strip():
-                for idx, line in enumerate(result.stdout.strip().split("\n")):
+                for line in result.stdout.strip().split("\n"):
                     parts = line.split("||", 1)
                     if len(parts) == 2:
                         app_name, title = parts[0].strip(), parts[1].strip()
-                        results.append(WindowInfo(idx, title, app_name))
+                        # Use 0 so switch_to_window always takes the AppleScript
+                        # activation path for AppleScript-enumerated windows.
+                        results.append(WindowInfo(0, title, app_name))
         except Exception:
             logger.debug("AppleScript window enumeration failed", exc_info=True)
         return results
@@ -261,15 +263,23 @@ elif sys.platform == "darwin":
 
         Uses Quartz (CGWindowListCopyWindowInfo) when PyObjC is available — typically
         a few milliseconds. Falls back to AppleScript otherwise (~200–500ms).
+        Some apps hide windows from Quartz, so supplement missing target apps
+        with AppleScript results on macOS.
         """
         if _PYOBJC_OK:
             try:
                 results = _find_windows_quartz(app_names)
+                if app_names is not None:
+                    found_apps = {w.app_name for w in results}
+                    missing_apps = [name for name in app_names if name not in found_apps]
+                    if missing_apps:
+                        results.extend(_find_windows_applescript(missing_apps))
             except Exception:
                 logger.debug("Quartz enumeration failed, using AppleScript", exc_info=True)
                 results = _find_windows_applescript(app_names)
         else:
             results = _find_windows_applescript(app_names)
+        results = list({(w.app_name, w.title): w for w in results}.values())
         results.sort(key=lambda w: (w.app_name, w.title))
         return results
 

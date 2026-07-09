@@ -12,6 +12,7 @@ from __future__ import annotations
 import sys
 import tkinter as tk
 import logging
+import queue
 from typing import Callable
 
 from .window_switcher import WindowInfo
@@ -30,6 +31,7 @@ class SwitcherOverlay:
         self._windows: list[WindowInfo] = []
         self._selected_index: int = 0
         self._visible: bool = False
+        self._pending: queue.Queue[Callable] = queue.Queue()
 
         self._overlay = tk.Toplevel(root)
         self._overlay.overrideredirect(True)
@@ -64,13 +66,23 @@ class SwitcherOverlay:
         self._list_frame.pack(fill="both", expand=True, padx=4, pady=(4, 8))
 
         self._labels: list[tk.Label] = []
+        self._root_tk.after(16, self._drain_pending)
 
     def _schedule(self, func: Callable) -> None:
         """Schedule a function to run on the main thread."""
+        self._pending.put(func)
+
+    def _drain_pending(self) -> None:
         try:
-            self._root_tk.after(0, func)
-        except RuntimeError:
-            pass  # tkinter already destroyed
+            while True:
+                try:
+                    func = self._pending.get_nowait()
+                except queue.Empty:
+                    break
+                func()
+            self._root_tk.after(16, self._drain_pending)
+        except (RuntimeError, tk.TclError):
+            pass
 
     def show(self, windows: list[WindowInfo], initial_index: int = 0) -> None:
         """Show the overlay (thread-safe)."""
@@ -109,6 +121,8 @@ class SwitcherOverlay:
         y = self._overlay.winfo_screenheight() // 4
         self._overlay.geometry(f"+{x}+{y}")
         self._overlay.deiconify()
+        self._overlay.lift()
+        self._overlay.attributes("-topmost", True)
 
     def hide(self) -> None:
         """Hide the overlay (thread-safe)."""
@@ -124,11 +138,14 @@ class SwitcherOverlay:
 
     def move_next(self) -> WindowInfo | None:
         """Move selection to next item (thread-safe)."""
+        self._schedule(self._do_move_next)
+        return self.selected
+
+    def _do_move_next(self) -> None:
         if not self._windows:
-            return None
+            return
         self._selected_index = (self._selected_index + 1) % len(self._windows)
-        self._schedule(self._highlight)
-        return self._windows[self._selected_index]
+        self._highlight()
 
     @property
     def selected(self) -> WindowInfo | None:

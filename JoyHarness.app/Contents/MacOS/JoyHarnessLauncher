@@ -1,0 +1,58 @@
+#!/bin/bash
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+PYTHON="$APP_DIR/.venv311/bin/python"
+
+find_existing_pid() {
+  pgrep -f "$APP_DIR/.venv311/bin/python -m src|$APP_DIR/.venv/bin/python -m src" | head -n 1
+}
+
+show_existing_window() {
+  local pid="$1"
+
+  /usr/bin/osascript <<APPLESCRIPT >/dev/null 2>&1 || true
+set targetPid to $pid
+tell application "System Events"
+  set matches to every process whose unix id is targetPid
+  if (count of matches) > 0 then
+    set targetProcess to item 1 of matches
+    set visible of targetProcess to true
+    set frontmost of targetProcess to true
+    if (count of windows of targetProcess) > 0 then
+      set targetWindow to window 1 of targetProcess
+      try
+        set value of attribute "AXMinimized" of targetWindow to false
+      end try
+      try
+        perform action "AXRaise" of targetWindow
+      end try
+    end if
+  end if
+end tell
+APPLESCRIPT
+}
+
+main() {
+  cd "$APP_DIR"
+
+  if [ -x "$APP_DIR/.venv311/bin/python" ]; then
+    PYTHON="$APP_DIR/.venv311/bin/python"
+  elif [ -x "$APP_DIR/.venv/bin/python" ]; then
+    PYTHON="$APP_DIR/.venv/bin/python"
+  else
+    PYTHON="python3"
+  fi
+
+  local existing_pid
+  existing_pid="$(find_existing_pid)"
+  if [ -n "$existing_pid" ]; then
+    show_existing_window "$existing_pid"
+    exit 0
+  fi
+
+  exec "$PYTHON" -m src
+}
+
+main "$@"

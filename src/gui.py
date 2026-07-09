@@ -43,6 +43,7 @@ class MainWindow(ResizableMixin):
         battery_reader: BatteryReader | None = None,
         connection_mode: str = "single_right",
         keep_alive_manager=None,
+        haptic_feedback_manager=None,
     ) -> None:
         self._key_mapper = key_mapper
         self._window_cycler = window_cycler
@@ -52,6 +53,7 @@ class MainWindow(ResizableMixin):
         self._battery_reader = battery_reader
         self._connection_mode = connection_mode
         self._keep_alive_manager = keep_alive_manager
+        self._haptic_feedback_manager = haptic_feedback_manager
 
         self._root = ttk.Window(
             title="NS Joy-Con R 键盘映射器",
@@ -140,6 +142,17 @@ class MainWindow(ResizableMixin):
             bootstyle=SUCCESS,
         )
         keep_alive_cb.pack(anchor=W, pady=(0, 12))
+
+        # Button haptic feedback toggle
+        self._haptic_var = ttk.BooleanVar(value=self._config.get("haptic_feedback_enabled", True))
+        haptic_cb = ttk.Checkbutton(
+            main,
+            text="  按键震动反馈",
+            variable=self._haptic_var,
+            command=self._on_haptic_toggle,
+            bootstyle=SUCCESS,
+        )
+        haptic_cb.pack(anchor=W, pady=(0, 12))
 
         # Window switch app selection
         app_label = ttk.Label(
@@ -237,6 +250,14 @@ class MainWindow(ResizableMixin):
         if self._keep_alive_manager:
             self._keep_alive_manager.set_enabled(enabled)
         logger.info("Keep-alive %s", "enabled" if enabled else "disabled")
+
+    def _on_haptic_toggle(self) -> None:
+        """Handle button haptic feedback toggle."""
+        enabled = self._haptic_var.get()
+        self._config["haptic_feedback_enabled"] = enabled
+        if self._haptic_feedback_manager:
+            self._haptic_feedback_manager.set_enabled(enabled)
+        logger.info("Haptic feedback %s", "enabled" if enabled else "disabled")
 
     def _build_app_checkboxes(self) -> None:
         """Build/refresh app checkboxes from KNOWN_APPS."""

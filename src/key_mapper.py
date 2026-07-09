@@ -32,9 +32,10 @@ LONG_PRESS_THRESHOLD = 0.25
 class KeyMapper:
     """Maps controller events to keyboard actions using a configuration dict."""
 
-    def __init__(self, config: dict, mode: str = "single_right") -> None:
+    def __init__(self, config: dict, mode: str = "single_right", haptic_feedback=None) -> None:
         """Initialize with a validated config dict and connection mode."""
         self._mode = mode
+        self._haptic_feedback = haptic_feedback
         self._button_indices = get_button_indices(mode)
         self._button_names = get_button_names(mode)
 
@@ -127,6 +128,9 @@ class KeyMapper:
         mapping = self._button_mappings.get(button_index)
         if mapping is None:
             return
+
+        if self._haptic_feedback:
+            self._haptic_feedback.pulse("button")
 
         action = mapping["action"]
         btn_name = _button_label(button_index, self._mode)
@@ -322,6 +326,8 @@ class KeyMapper:
                     self._switcher_overlay.show(windows, initial_index=initial)
                     self._ws_overlay_active = True
                     self._ws_last_move = now
+                    if self._haptic_feedback:
+                        self._haptic_feedback.pulse("overlay")
                     logger.info("window_switch overlay: %d windows", len(windows))
 
         if self._ws_held and self._ws_overlay_active and self._switcher_overlay:

@@ -95,7 +95,16 @@ def merge_with_defaults(user_config: dict) -> dict:
     result = copy.deepcopy(DEFAULT_CONFIG)
 
     # Override top-level settings
-    for key in ("version", "description", "deadzone", "poll_interval", "stick_mode", "stick_enabled", "keep_alive_enabled"):
+    for key in (
+        "version",
+        "description",
+        "deadzone",
+        "poll_interval",
+        "stick_mode",
+        "stick_enabled",
+        "keep_alive_enabled",
+        "haptic_feedback_enabled",
+    ):
         if key in user_config:
             result[key] = user_config[key]
 

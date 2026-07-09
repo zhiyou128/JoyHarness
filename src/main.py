@@ -47,6 +47,7 @@ import pygame
 from .battery_reader import BatteryReader
 from .config_loader import load_config, get_profile, get_platform_config_path, USER_CONFIG_PATH
 from .gui import MainWindow
+from .haptic_feedback import HapticFeedbackManager
 from .joycon_reader import find_joycon, detect_connection_mode, run_discover_mode, run_polling_loop, wait_for_reconnection
 from .keep_alive import KeepAliveManager
 from .key_mapper import KeyMapper
@@ -266,8 +267,14 @@ def main() -> None:
     if known_apps:
         set_known_apps(known_apps)
 
-    key_mapper = KeyMapper(config, mode=connection_mode)
     stop_event = threading.Event()
+
+    haptic_feedback_manager = HapticFeedbackManager(
+        stop_event,
+        enabled=config.get("haptic_feedback_enabled", True),
+    )
+
+    key_mapper = KeyMapper(config, mode=connection_mode, haptic_feedback=haptic_feedback_manager)
 
     # Initialize WindowCycler with selected apps from config
     selected_apps = config.get("selected_apps")
@@ -288,6 +295,7 @@ def main() -> None:
         connection_mode=connection_mode,
         battery_reader=battery_reader,
         keep_alive_manager=keep_alive_manager,
+        haptic_feedback_manager=haptic_feedback_manager,
     )
     key_mapper.set_tk_root(gui.root)
 
@@ -326,6 +334,7 @@ def main() -> None:
     poll_thread.join(timeout=2.0)
     battery_reader.join(timeout=2.0)
     keep_alive_manager.join(timeout=2.0)
+    haptic_feedback_manager.join(timeout=2.0)
     key_mapper.release_all()
     pygame.joystick.quit()
     pygame.display.quit()
