@@ -1,14 +1,26 @@
 # JoyHarness
 
-将 Nintendo Switch Joy-Con 手柄通过蓝牙映射为键盘快捷键。支持单左手柄、单右手柄、双手柄三种连接模式，自动检测并热切换配置。
+**把 Nintendo Switch Joy-Con 变成一只随手可用的桌面快捷键遥控器。**
 
-支持 Windows 11 与 macOS 13+ 双平台。
+JoyHarness 将蓝牙连接的 Joy-Con 映射为键盘快捷键、窗口切换和自动化动作，适合演示、阅读、剪辑、写作、轻量开发和任何想把常用操作从键盘上解放出来的桌面工作流。
+
+支持 Windows 11 与 macOS 13+，可自动识别单左手柄、单右手柄和双手柄模式，并为不同连接方式切换对应配置。
 
 ## 界面预览
 
-| Windows | macOS |
-|---------|-------|
-| ![Windows](assets/screenshot.png) | ![macOS](assets/screenshot-mac.png) |
+<p align="center">
+  <img src="assets/screenshot-macos-main.png" alt="JoyHarness macOS main window" width="520">
+</p>
+
+| macOS | Windows |
+|-------|---------|
+| ![JoyHarness macOS](assets/screenshot-mac.png) | ![JoyHarness Windows](assets/screenshot.png) |
+
+## 适合谁
+
+- 想用 Joy-Con 做演示翻页、窗口切换、快捷键触发的人
+- 想把常用桌面操作映射到单手遥控器的人
+- 想在 Windows 和 macOS 上复用同一套 Joy-Con 工作流的人
 
 ## 功能特性
 
@@ -20,12 +32,13 @@
 - **GUI 设置** — 可视化编辑键位映射
 - **电量显示** — HID 读取 Joy-Con 电量
 - **保活防休眠** — 周期性零强度震动
+- **震动反馈** — 按键和窗口切换时给出轻量触觉反馈
 
 ## 快速开始
 
 ### 环境要求
 
-- **Windows 11** 或 **macOS 13+**（实测 macOS 15.7，Apple Silicon M4）
+- **Windows 11** 或 **macOS 13+**
 - Python 3.10+
 - Joy-Con 已通过蓝牙配对
 
@@ -49,7 +62,7 @@ pip install -r requirements.txt
 python -m src
 ```
 
-macOS 可双击 `start.command`，Windows 可双击 `start.vbs`。
+macOS 可双击 `start.command` 或 `JoyHarness.app`，Windows 可双击 `start.vbs`。
 
 macOS 首次运行需在 **系统设置 → 隐私与安全性** 中授予 **辅助功能** 和 **输入监控** 权限。
 
@@ -112,7 +125,7 @@ python -m src --verbose         # 调试日志
 ## macOS 注意事项
 
 - **权限**：需要「辅助功能」和「输入监控」权限
-- **进程名大小写敏感**：中文系统下微信进程名是 `微信`，不是 `WeChat`
+- **进程名大小写敏感**：窗口切换目标必须匹配系统里的真实应用进程名
 - **全屏窗口**：`window_switch` 只能看到当前 Space 的窗口
 - **SL/SR 侧键**：在 macOS 上 SDL2 检测不稳定，建议映射为其他功能
 
